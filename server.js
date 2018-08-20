@@ -14,10 +14,21 @@ const hash = new hashIds()
 let index = 0
 const data = []
 const hashTable = {}
+
+function GetKey() {
+    let index = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+    const key = `a${hash.encode(index)}`
+    while (hashTable[key]) {
+        index = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+        key = `a${hash.encode(index)}`
+    }
+    return key
+}
+
 server.post('/', (req, res) => {
     const body = req.body
     if (!body.links.view && !body.links.edit) {
-        const key = `a${hash.encode(index)}`
+        const key = GetKey()
         hashTable[key] = index
         body.links.view = `https://easybracket.herokuapp.com/${index}`
         body.links.edit = `https://easybracket.herokuapp.com/Bracket/${key}`
@@ -50,7 +61,7 @@ server.get(/\/[0-9]+$/, (req, res) => {
     res.send(store)
 })
 
-// FETCH EDIT DATA
+// FETCH DATA
 server.post(/\/[0-9a-z]+$/i, (req, res) => {
     const key = req.url.replace('/', '')
     const index = hashTable[key]
@@ -60,7 +71,7 @@ server.post(/\/[0-9a-z]+$/i, (req, res) => {
         tournamentFormat: d.tournamentFormat,
         teams: d.teams,
         isBracketUpToDate: d.isBracketUpToDate,
-        singleEliminationData: d.singleEliminationData,
+        singleEliminationData: d.tournamentFormat === 'Single Elimination' ? d.singleEliminationData : [],
         bestOfSingle: d.bestOfSingle,
         roundRobinData: d.roundRobinData,
         roundRobinScoreBoard: d.roundRobinScoreBoard,
@@ -69,6 +80,8 @@ server.post(/\/[0-9a-z]+$/i, (req, res) => {
     } : { error: true }
     res.send(store)
 })
+
+// Write to the database every 20min
 
 // Wake me up inside
 server.get('/wake/me/up/inside', (req, res) => {
